@@ -19,6 +19,7 @@ import QtQuick 2.6
 import QtQuick.Layouts 1.1
 import org.kde.plasma.components 3.0 as PlasmaComponents
 import org.kde.plasma.plasmoid 2.0
+import org.kde.plasma.core 2.0 as PlasmaCore
 
 
 Item {
@@ -39,7 +40,6 @@ Item {
     property double power: getPower(batPath)
 
     property bool vertical: (plasmoid.formFactor == PlasmaCore.Types.Vertical)
-    property bool planar: (plasmoid.formFactor == PlasmaCore.Types.Planar)
     property double parentWidth: parent !== null ? parent.width : 0
     property double parentHeight: parent !== null ? parent.height : 0
     property double itemWidth: 0
@@ -49,13 +49,7 @@ Item {
         if (!parentHeight) {
             return
         }
-        if (planar) {
-            var contentItemWidth = parentHeight
-            var contentWidth = numberOfParts * contentItemWidth + (numberOfParts - 1) * itemMargin
-            var restrictToWidth = contentWidth / parentWidth > 1
-            itemWidth = restrictToWidth ? (parentWidth + itemMargin) / numberOfParts
-                                          - itemMargin : contentItemWidth
-        } else if (vertical) {
+        if (vertical) {
             itemWidth = parentWidth
         } else {
             itemWidth = parentHeight
@@ -192,7 +186,6 @@ Item {
         onTriggered: {
             main.power = getPower(main.batPath)
             display.text = displayPower(main.power)
-            console.log(itemHeight * plasmoid.configuration.aliasFontSize * 0.01)
         }
     }
 }
