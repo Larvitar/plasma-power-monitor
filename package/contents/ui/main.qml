@@ -38,6 +38,8 @@ Item {
     property bool powerNow: checkPowerNow(batPath)
     property double power: getPower(batPath)
 
+    property bool vertical: (plasmoid.formFactor == PlasmaCore.Types.Vertical)
+    property bool planar: (plasmoid.formFactor == PlasmaCore.Types.Planar)
     property double parentWidth: parent !== null ? parent.width : 0
     property double parentHeight: parent !== null ? parent.height : 0
     property double itemWidth: 0
@@ -47,13 +49,13 @@ Item {
         if (!parentHeight) {
             return
         }
-        if (plasmoid.formFactor == PlasmaCore.Types.Planar) {
+        if (planar) {
             var contentItemWidth = parentHeight
             var contentWidth = numberOfParts * contentItemWidth + (numberOfParts - 1) * itemMargin
             var restrictToWidth = contentWidth / parentWidth > 1
             itemWidth = restrictToWidth ? (parentWidth + itemMargin) / numberOfParts
                                           - itemMargin : contentItemWidth
-        } else if (plasmoid.formFactor == PlasmaCore.Types.Vertical) {
+        } else if (vertical) {
             itemWidth = parentWidth
         } else {
             itemWidth = parentHeight
@@ -190,6 +192,7 @@ Item {
         onTriggered: {
             main.power = getPower(main.batPath)
             display.text = displayPower(main.power)
+            console.log(itemHeight * plasmoid.configuration.aliasFontSize * 0.01)
         }
     }
 }
