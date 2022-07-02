@@ -27,29 +27,48 @@ Item {
     
     //height and width, when the widget is placed in desktop
     width: 80
-    height: 20
-
-    //height and width, when widget is placed in plasma panel
-    Layout.preferredWidth: 80 * units.devicePixelRatio
-    Layout.preferredHeight: 20 * units.devicePixelRatio
+    height: 80
 
     Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation
+
+    onParentWidthChanged: setWidgetSize()
+    onParentHeightChanged: setWidgetSize()
 
     property string batPath: getBatPath()
     property bool powerNow: checkPowerNow(batPath)
     property double power: getPower(batPath)
 
+    property double parentWidth: parent !== null ? parent.width : 0
+    property double parentHeight: parent !== null ? parent.height : 0
+    property double itemWidth: 0
+    property double itemHeight: 0
+
+    function setWidgetSize() {
+        if (!parentHeight) {
+            return
+        }
+        if (plasmoid.formFactor == PlasmaCore.Types.Planar) {
+            var contentItemWidth = parentHeight
+            var contentWidth = numberOfParts * contentItemWidth + (numberOfParts - 1) * itemMargin
+            var restrictToWidth = contentWidth / parentWidth > 1
+            itemWidth = restrictToWidth ? (parentWidth + itemMargin) / numberOfParts
+                                          - itemMargin : contentItemWidth
+        } else if (plasmoid.formFactor == PlasmaCore.Types.Vertical) {
+            itemWidth = parentWidth
+        } else {
+            itemWidth = parentHeight
+        }
+        itemHeight = itemWidth
+    }
+
     //this function tries to find the exact path to battery file
     function getBatPath() {
-        for(var i=0; i<4; i++) {
-            var path = "/sys/class/power_supply/BAT" + i + "/voltage_now";
-            var req = new XMLHttpRequest();
-            req.open("GET", path, false);
-            req.send(null)
-            if(req.responseText != "") {
-                //console.log(path)
-                return "/sys/class/power_supply/BAT" + i;
-            }
+        var path = "/sys/class/power_supply/BAT" + plasmoid.configuration.valueBatteryNumber + "/voltage_now";
+        var req = new XMLHttpRequest();
+        req.open("GET", path, false);
+        req.send(null)
+        if(req.responseText != "") {
+            return "/sys/class/power_supply/BAT" + plasmoid.configuration.valueBatteryNumber;
         }
         return ""
     }
@@ -72,6 +91,23 @@ Item {
         else {
             return true
         }
+    }
+
+    function displayPower(powerValue) {
+        var power = powerValue;
+        if(Number.isInteger(power)) {
+            power += ".0"
+        }
+
+        if(!plasmoid.configuration.showDecimals) {
+            power = Math.round(power)
+        }
+                
+        if(plasmoid.configuration.showUnit) {
+            power += "W"
+        }
+
+        return(power);
     }
 
     //Returns power usage in Watts, rounded off to 1 decimal.
@@ -111,30 +147,40 @@ Item {
         return Math.round(power*10)/10; //toFixed() is apparently slow, so we use this way
     }
 
-    PlasmaComponents.Label {
-        id: display
+    Item {
+        id: labels
+        anchors.fill: parent
 
-        anchors {
-            fill: parent
-            margins: Math.round(parent.width * 0.01)
+        PlasmaComponents.Label {
+            id: aliasText
+            anchors.fill: parent
+
+            verticalAlignment: Text.AlignTop
+
+            text: plasmoid.configuration.alias
+
+            font.pixelSize: itemHeight * plasmoid.configuration.aliasFontSize * 0.01
+            font.pointSize: -1
         }
 
-        verticalAlignment: Text.AlignVCenter
-        horizontalAlignment: Text.AlignHCenter
+        PlasmaComponents.Label {
+            id: display
 
-        text: {
-            if(Number.isInteger(main.power)) {
-                return(main.power + ".0 W");
-            }
-            else {
-                return(main.power + " W");
-            }
+            anchors.bottom: aliasText.text === '' ? undefined : parent.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 1
+            anchors.verticalCenter: aliasText.text === '' ? parent.verticalCenter : undefined
+            anchors.fill: parent
+
+            verticalAlignment: Text.AlignBottom
+            horizontalAlignment: Text.AlignRight
+
+            text: displayPower(main.power)
+
+            font.pixelSize: itemHeight * plasmoid.configuration.valueFontSize * 0.01
+            font.pointSize: -1
+            font.bold: plasmoid.configuration.makeFontBold
         }
-
-        font.pixelSize: 1000;
-        minimumPointSize: theme.smallestFont.pointSize
-        fontSizeMode: Text.Fit
-        font.bold: plasmoid.configuration.makeFontBold
     }
 
     Timer {
@@ -143,17 +189,7 @@ Item {
         repeat: true
         onTriggered: {
             main.power = getPower(main.batPath)
-            if(Number.isInteger(main.power)) {
-                //When power has 0 decimal places, it removes the decimal
-                //point inspite of power variable being double. This momentarily
-                //makes the font size bigger due to extra available space which
-                //does not look good. So we do this simple hack of manually adding 
-                //a .0 to number
-                display.text = main.power + ".0 W";
-            }
-            else {
-                display.text = main.power + " W"
-            }
+            display.text = displayPower(main.power)
         }
     }
 }

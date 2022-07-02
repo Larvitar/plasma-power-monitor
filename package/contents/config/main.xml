@@ -8,7 +8,25 @@
         <entry name="updateInterval" type="Double">
             <default>1.0</default>
         </entry>
+        <entry name="valueBatteryNumber" type="Int">
+            <default>0</default>
+        </entry>
+        <entry name="alias" type="String">
+            <default>Power</default>
+        </entry>
+        <entry name="aliasFontSize" type="Int">
+            <default>27</default>
+        </entry>
+        <entry name="valueFontSize" type="Int">
+            <default>48</default>
+        </entry>
         <entry name="makeFontBold" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="showUnit" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="showDecimals" type="Bool">
             <default>false</default>
         </entry>
     </group>
